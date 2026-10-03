@@ -1,0 +1,38 @@
+# NEXVO
+
+NEXVO is a mobile-first Arabic messaging interface with a same-origin Node.js API and a SQLite database.
+
+## Requirements
+
+- Node.js 22.13 or newer (the built-in SQLite module is used).
+- Copy `.env.example` to `.env` and replace both secret placeholders before starting the app:
+  - Set a unique administrator password of at least 14 characters.
+  - Set `SESSION_SECRET` to at least 32 cryptographically random characters.
+- The password previously shared in chat must not be reused. It was exposed; choose a new unique password.
+
+Generate a session secret with:
+
+```powershell
+node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"
+```
+
+The example environment is configured for deployment: it binds to `0.0.0.0`, enables production cookies, and requires HTTPS at the server or trusted reverse proxy. Set `PORT` to the port provided by your hosting platform; its environment variable overrides the value in `.env`. Ensure `.data/` is writable and persistent so the SQLite database and uploaded media survive restarts.
+
+For local development, change `HOST` to `127.0.0.1` and `NODE_ENV` to `development` in `.env`, then start with `npm start` and open <http://127.0.0.1:3000>. The administrator email and password are provisioned from environment variables and are never embedded in browser code.
+
+For deployment, terminate HTTPS at a trusted reverse proxy that forwards WebSocket upgrades and keeps realtime connections open. Keep `NODE_ENV=production` and `SESSION_COOKIE_SECURE=true`, store real secrets in the hosting provider's secret manager, and back up the database and uploaded media together.
+
+## Current server-backed features
+
+- Profile registration with a phone number, username, password, and optional profile image.
+- Passwords hashed with Node's scrypt; opaque, HttpOnly, SameSite session cookies backed by SQLite.
+- Environment-provisioned administrator sign-in, user directory and account status/verification controls.
+- Persistent brand settings and image assets for the app logo, app icon, favicon, default avatar, and Open Graph image.
+- Administrative audit log.
+- Private one-to-one conversations backed by SQLite, with messages delivered in real time over authenticated WebSockets.
+- User lookup by exact username or phone number, without exposing phone numbers in search results.
+- Text and supported image/video statuses shared with conversation peers, served from the server, and removed after 24 hours.
+
+Video status media supports byte-range requests for browser playback. The status upload limit is 50 MB per item; supported formats are PNG, JPEG, WEBP, GIF, MP4, and WebM.
+
+Real phone verification, media transcoding/resumable uploads, WebRTC, groups, and end-to-end encryption are not implemented. Messages are stored as text in SQLite and are not end-to-end encrypted. Place the app behind HTTPS in production; administrators do not have an API or dashboard feature to read private conversation content.
